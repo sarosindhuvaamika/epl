@@ -14,7 +14,7 @@ const tabs = [
   { key: 'Matches', label: '📅 Matches' },
   { key: 'Teams', label: '👥 Teams' },
   { key: 'Players', label: '🧑 Players' },
-  { key: 'Settings', label: '⚙️ Configuration' },
+  { key: 'Settings', label: '⚙️ Match Settings' },
 ];
 
 export default function AdminDashboard() {
