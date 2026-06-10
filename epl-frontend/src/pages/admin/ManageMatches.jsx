@@ -6,22 +6,13 @@ import DateInput from '../../components/DateInput';
 export default function ManageMatches() {
   const { data, refresh } = useAdminData();
   const [showForm, setShowForm] = useState(false);
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ tournament_id: '', group_id: '', team_a_id: '', team_b_id: '', match_date: '', venue: '', venue_id: '', overs: '', match_level_id: '', status: 'upcoming' });
+  const [form, setForm] = useState({ district_id: '', tournament_id: '', match_level_id: '', group_id: '', team_a_id: '', team_b_id: '', venue_id: '', venue: '', match_date: '', match_time: '', overs: '', status: 'upcoming' });
   const [editId, setEditId] = useState(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   // Inline add states
-  const [addingGroup, setAddingGroup] = useState(false);
-  const [addingVenue, setAddingVenue] = useState(false);
-  const [addingDistrict, setAddingDistrict] = useState(false);
-  const [addingRound, setAddingRound] = useState(false);
-  const [addingTournament, setAddingTournament] = useState(false);
-  const [newGroup, setNewGroup] = useState('');
-  const [newVenue, setNewVenue] = useState({ venue_name: '', location: '' });
-  const [newDistrict, setNewDistrict] = useState('');
-  const [newRound, setNewRound] = useState('');
-  const [newTournament, setNewTournament] = useState({ name: '', district_id: '' });
+  const [adding, setAdding] = useState({});
+  const [newVal, setNewVal] = useState({});
 
   const matches = data?.matches || [];
   const tournaments = data?.tournaments || [];
@@ -33,49 +24,59 @@ export default function ManageMatches() {
   const districts = data?.districts || [];
 
   const resetForm = () => {
-    setForm({ tournament_id: '', group_id: '', team_a_id: '', team_b_id: '', match_date: '', venue: '', venue_id: '', overs: '', match_level_id: '', status: 'upcoming' });
-    setEditId(null); setStep(1); setShowForm(false);
+    setForm({ district_id: '', tournament_id: '', match_level_id: '', group_id: '', team_a_id: '', team_b_id: '', venue_id: '', venue: '', match_date: '', match_time: '', overs: '', status: 'upcoming' });
+    setEditId(null); setShowForm(false); setAdding({}); setNewVal({});
   };
 
   const handleSubmit = async () => {
-    if (editId) await api.put(`/matches/${editId}`, form);
-    else await api.post('/matches', form);
+    const payload = { ...form };
+    if (payload.match_time && payload.match_date) {
+      payload.match_date = `${payload.match_date} ${payload.match_time}`;
+    }
+    if (editId) await api.put(`/matches/${editId}`, payload);
+    else await api.post('/matches', payload);
     resetForm(); refresh('matches');
   };
 
   const handleEdit = (m) => {
-    setForm({ tournament_id: m.tournament_id || '', group_id: m.group_id || '', team_a_id: m.team_a_id || '', team_b_id: m.team_b_id || '', match_date: m.match_date || '', venue: m.venue || '', venue_id: m.venue_id || '', overs: m.overs || '', match_level_id: m.match_level_id || '', status: m.status });
-    setEditId(m.id); setShowForm(true); setStep(1);
+    const [date, time] = (m.match_date || '').split(' ');
+    setForm({ district_id: m.tournament?.district_id || '', tournament_id: m.tournament_id || '', match_level_id: m.match_level_id || '', group_id: m.group_id || '', team_a_id: m.team_a_id || '', team_b_id: m.team_b_id || '', venue_id: m.venue_id || '', venue: m.venue || '', match_date: date || m.match_date || '', match_time: time || '', overs: m.overs || '', status: m.status });
+    setEditId(m.id); setShowForm(true);
   };
 
   const handleDelete = async (id) => { await api.delete(`/matches/${id}`); refresh('matches'); };
 
   // Inline add handlers
-  const addGroup = async () => {
-    if (!newGroup || !form.tournament_id) return;
-    const res = await api.post('/groups', { group_name: newGroup, tournament_id: form.tournament_id });
-    refresh('groups'); setForm({ ...form, group_id: res.data.id }); setNewGroup(''); setAddingGroup(false);
-  };
-  const addVenue = async () => {
-    if (!newVenue.venue_name) return;
-    const res = await api.post('/venues', newVenue);
-    refresh('venues'); setForm({ ...form, venue_id: res.data.id, venue: res.data.venue_name }); setNewVenue({ venue_name: '', location: '' }); setAddingVenue(false);
-  };
   const addDistrict = async () => {
-    if (!newDistrict) return;
-    await api.post('/districts', { district_name: newDistrict });
-    refresh('districts'); setNewDistrict(''); setAddingDistrict(false);
-  };
-  const addRound = async () => {
-    if (!newRound) return;
-    const res = await api.post('/match-levels', { name: newRound });
-    refresh('matchLevels'); setForm({ ...form, match_level_id: res.data.id }); setNewRound(''); setAddingRound(false);
+    if (!newVal.district) return;
+    const res = await api.post('/districts', { district_name: newVal.district });
+    refresh('districts'); setForm({ ...form, district_id: res.data.id }); setNewVal({ ...newVal, district: '' }); setAdding({ ...adding, district: false });
   };
   const addTournament = async () => {
-    if (!newTournament.name) return;
-    const res = await api.post('/tournaments', { ...newTournament, status: 'upcoming' });
-    refresh('tournaments'); setForm({ ...form, tournament_id: res.data.id }); setNewTournament({ name: '', district_id: '' }); setAddingTournament(false);
+    if (!newVal.tournament) return;
+    const res = await api.post('/tournaments', { name: newVal.tournament, district_id: form.district_id, status: 'upcoming' });
+    refresh('tournaments'); setForm({ ...form, tournament_id: res.data.id }); setNewVal({ ...newVal, tournament: '' }); setAdding({ ...adding, tournament: false });
   };
+  const addMatchLevel = async () => {
+    if (!newVal.matchLevel) return;
+    const res = await api.post('/match-levels', { name: newVal.matchLevel });
+    refresh('matchLevels'); setForm({ ...form, match_level_id: res.data.id }); setNewVal({ ...newVal, matchLevel: '' }); setAdding({ ...adding, matchLevel: false });
+  };
+  const addGroup = async () => {
+    if (!newVal.group || !form.tournament_id) return;
+    const res = await api.post('/groups', { group_name: newVal.group, tournament_id: form.tournament_id });
+    refresh('groups'); setForm({ ...form, group_id: res.data.id }); setNewVal({ ...newVal, group: '' }); setAdding({ ...adding, group: false });
+  };
+  const addVenue = async () => {
+    if (!newVal.venueName) return;
+    const res = await api.post('/venues', { venue_name: newVal.venueName, location: newVal.venueLocation || '' });
+    refresh('venues'); setForm({ ...form, venue_id: res.data.id, venue: res.data.venue_name }); setNewVal({ ...newVal, venueName: '', venueLocation: '' }); setAdding({ ...adding, venue: false });
+  };
+
+  // Filtered data based on selections
+  const filteredTournaments = tournaments.filter(t => !form.district_id || t.district_id == form.district_id);
+  const filteredGroups = groups.filter(g => g.tournament_id == form.tournament_id);
+  const filteredTeams = teams;
 
   const filtered = matches.filter(m => {
     const matchSearch = (m.team_a?.team_name + ' ' + m.team_b?.team_name).toLowerCase().includes(search.toLowerCase());
@@ -83,11 +84,7 @@ export default function ManageMatches() {
     return matchSearch && matchStatus;
   });
 
-  const filteredGroups = groups.filter(g => !form.tournament_id || g.tournament_id == form.tournament_id);
-
-  const canProceedStep1 = form.tournament_id;
-  const canProceedStep2 = form.team_a_id && form.team_b_id;
-  const canSubmit = form.overs && form.match_date;
+  const canSubmit = form.district_id && form.tournament_id && form.match_level_id && form.group_id && form.team_a_id && form.team_b_id && (form.venue_id || form.venue) && form.match_date && form.overs;
 
   const statusColors = {
     upcoming: { bg: 'rgba(115,3,192,0.1)', color: '#a78bfa', border: 'rgba(115,3,192,0.2)' },
@@ -128,238 +125,155 @@ export default function ManageMatches() {
         </div>
       </div>
 
-      {/* Match Creation Wizard */}
+      {/* Match Creation Form */}
       {showForm && (
         <div className="rounded-2xl overflow-hidden" style={{ background: '#111128', border: '1px solid rgba(255,255,255,0.08)' }}>
-          {/* Wizard Header */}
           <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <div>
-              <h3 className="text-sm font-semibold text-white">{editId ? 'Edit Match' : 'Create New Match'}</h3>
-              <p className="text-xs mt-0.5" style={{ color: '#555' }}>Step {step} of 3</p>
-            </div>
+            <h3 className="text-sm font-semibold text-white">{editId ? '✏️ Edit Match' : '🏏 Create New Match'}</h3>
             <button onClick={resetForm} className="p-2 rounded-lg hover:bg-white/5">
               <svg className="w-4 h-4" fill="none" stroke="#666" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
-          {/* Progress */}
-          <div className="px-5 pt-4">
-            <div className="flex gap-2">
-              {[1, 2, 3].map(s => (
-                <div key={s} className="flex-1 h-1 rounded-full transition-all duration-300" style={{ background: s <= step ? 'linear-gradient(90deg, #7303c0, #ec38bc)' : 'rgba(255,255,255,0.06)' }} />
-              ))}
-            </div>
-            <div className="flex justify-between mt-2">
-              <span className="text-xs" style={{ color: step >= 1 ? '#ec38bc' : '#444' }}>Tournament & Group</span>
-              <span className="text-xs" style={{ color: step >= 2 ? '#ec38bc' : '#444' }}>Teams</span>
-              <span className="text-xs" style={{ color: step >= 3 ? '#ec38bc' : '#444' }}>Match Details</span>
-            </div>
-          </div>
+          <div className="p-5 space-y-5">
+            {/* 1. District */}
+            <FieldSection label="District" required adding={adding.district} onToggleAdd={() => setAdding({ ...adding, district: !adding.district })}>
+              {adding.district && (
+                <InlineAdd value={newVal.district || ''} onChange={v => setNewVal({ ...newVal, district: v })} onAdd={addDistrict} onCancel={() => setAdding({ ...adding, district: false })} placeholder="District name" />
+              )}
+              <PillSelect items={districts} labelKey="district_name" value={form.district_id} onChange={v => setForm({ ...form, district_id: v, tournament_id: '', group_id: '' })} color="#3b82f6" />
+            </FieldSection>
 
-          {/* Step Content */}
-          <div className="p-5">
-            {/* STEP 1 - Tournament, Group, District */}
-            {step === 1 && (
-              <div className="space-y-5">
-                {/* Tournament */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-white/70">Tournament <span className="text-red-400">*</span></label>
-                    <button type="button" onClick={() => setAddingTournament(!addingTournament)} className="text-xs px-2 py-1 rounded-lg transition-all" style={{ color: '#ec38bc', background: 'rgba(236,56,188,0.1)' }}>
-                      {addingTournament ? '✕ Cancel' : '+ New'}
-                    </button>
-                  </div>
-                  {addingTournament && (
-                    <div className="mb-3 p-3 rounded-xl space-y-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(236,56,188,0.2)' }}>
-                      <input value={newTournament.name} onChange={e => setNewTournament({ ...newTournament, name: e.target.value })} placeholder="Tournament name" className="w-full px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                      <div className="flex gap-2">
-                        <select value={newTournament.district_id} onChange={e => setNewTournament({ ...newTournament, district_id: e.target.value })} className="flex-1 px-3 py-2.5 text-white text-sm focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <option value="">District (optional)</option>
-                          {districts.map(d => <option key={d.id} value={d.id}>{d.district_name}</option>)}
-                        </select>
-                        <button type="button" onClick={() => setAddingDistrict(true)} className="px-3 py-2.5 text-xs rounded-lg" style={{ color: '#ec38bc', background: 'rgba(236,56,188,0.1)' }}>+ District</button>
-                      </div>
-                      {addingDistrict && (
-                        <div className="flex gap-2">
-                          <input value={newDistrict} onChange={e => setNewDistrict(e.target.value)} placeholder="District name" className="flex-1 px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                          <button type="button" onClick={addDistrict} className="px-3 py-2 text-xs text-white rounded-lg" style={{ background: '#22c55e' }}>Add</button>
-                          <button type="button" onClick={() => setAddingDistrict(false)} className="px-3 py-2 text-xs rounded-lg" style={{ color: '#888' }}>✕</button>
-                        </div>
-                      )}
-                      <button type="button" onClick={addTournament} className="w-full py-2.5 text-sm font-medium text-white rounded-lg" style={{ background: 'linear-gradient(135deg, #7303c0, #ec38bc)' }}>Create Tournament</button>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto">
-                    {tournaments.map(t => (
-                      <button key={t.id} type="button" onClick={() => setForm({ ...form, tournament_id: t.id, group_id: '' })}
-                        className="p-3 rounded-xl text-left transition-all text-sm"
-                        style={{ background: form.tournament_id == t.id ? 'rgba(115,3,192,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.tournament_id == t.id ? 'rgba(115,3,192,0.4)' : 'rgba(255,255,255,0.06)'}`, color: form.tournament_id == t.id ? 'white' : '#888' }}>
-                        <span className="font-medium">{t.name}</span>
-                        <span className="block text-xs mt-0.5" style={{ color: '#555' }}>{t.district?.district_name || 'All'} • {t.status}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {!form.tournament_id && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>Please select a tournament</p>}
-                </div>
-
-                {/* Group */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-white/70">Group</label>
-                    <button type="button" onClick={() => setAddingGroup(!addingGroup)} className="text-xs px-2 py-1 rounded-lg transition-all" style={{ color: '#ec38bc', background: 'rgba(236,56,188,0.1)' }}>
-                      {addingGroup ? '✕ Cancel' : '+ New'}
-                    </button>
-                  </div>
-                  {addingGroup && (
-                    <div className="mb-3 flex gap-2">
-                      <input value={newGroup} onChange={e => setNewGroup(e.target.value)} placeholder="e.g. Group A" className="flex-1 px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                      <button type="button" onClick={addGroup} className="px-4 py-2.5 text-sm text-white rounded-lg" style={{ background: '#22c55e' }}>Add</button>
-                    </div>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setForm({ ...form, group_id: '' })} className="px-3 py-2 rounded-lg text-xs transition-all" style={{ background: !form.group_id ? 'rgba(115,3,192,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${!form.group_id ? 'rgba(115,3,192,0.3)' : 'rgba(255,255,255,0.06)'}`, color: !form.group_id ? 'white' : '#888' }}>None</button>
-                    {filteredGroups.map(g => (
-                      <button key={g.id} type="button" onClick={() => setForm({ ...form, group_id: g.id })} className="px-3 py-2 rounded-lg text-xs transition-all" style={{ background: form.group_id == g.id ? 'rgba(115,3,192,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.group_id == g.id ? 'rgba(115,3,192,0.3)' : 'rgba(255,255,255,0.06)'}`, color: form.group_id == g.id ? 'white' : '#888' }}>
-                        {g.group_name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            {/* 2. Tournament (filtered by district) */}
+            {form.district_id && (
+              <FieldSection label="Tournament" required adding={adding.tournament} onToggleAdd={() => setAdding({ ...adding, tournament: !adding.tournament })}>
+                {adding.tournament && (
+                  <InlineAdd value={newVal.tournament || ''} onChange={v => setNewVal({ ...newVal, tournament: v })} onAdd={addTournament} onCancel={() => setAdding({ ...adding, tournament: false })} placeholder="Tournament name" />
+                )}
+                <PillSelect items={filteredTournaments} labelKey="name" value={form.tournament_id} onChange={v => setForm({ ...form, tournament_id: v, group_id: '' })} color="#f59e0b" />
+                {filteredTournaments.length === 0 && <p className="text-xs" style={{ color: '#555' }}>No tournaments in this district. Add one above.</p>}
+              </FieldSection>
             )}
 
-            {/* STEP 2 - Teams */}
-            {step === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium block mb-2 text-white/70">Team A <span className="text-red-400">*</span></label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                    {teams.map(t => (
-                      <button key={t.id} type="button" onClick={() => setForm({ ...form, team_a_id: t.id })}
-                        className="p-3 rounded-xl text-center transition-all text-sm truncate"
-                        style={{ background: form.team_a_id == t.id ? 'rgba(115,3,192,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.team_a_id == t.id ? 'rgba(115,3,192,0.4)' : 'rgba(255,255,255,0.06)'}`, color: form.team_a_id == t.id ? 'white' : '#888' }}>
-                        {t.team_name}
-                      </button>
-                    ))}
-                  </div>
-                  {!form.team_a_id && <p className="text-xs mt-1" style={{ color: '#ef4444' }}>Required</p>}
-                </div>
-                <div className="flex items-center justify-center py-1">
-                  <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(236,56,188,0.1)', color: '#ec38bc' }}>VS</span>
-                </div>
-                <div>
-                  <label className="text-xs font-medium block mb-2 text-white/70">Team B <span className="text-red-400">*</span></label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                    {teams.filter(t => t.id != form.team_a_id).map(t => (
-                      <button key={t.id} type="button" onClick={() => setForm({ ...form, team_b_id: t.id })}
-                        className="p-3 rounded-xl text-center transition-all text-sm truncate"
-                        style={{ background: form.team_b_id == t.id ? 'rgba(255,96,34,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.team_b_id == t.id ? 'rgba(255,96,34,0.4)' : 'rgba(255,255,255,0.06)'}`, color: form.team_b_id == t.id ? 'white' : '#888' }}>
-                        {t.team_name}
-                      </button>
-                    ))}
-                  </div>
-                  {!form.team_b_id && <p className="text-xs mt-1" style={{ color: '#ef4444' }}>Required</p>}
-                </div>
-              </div>
+            {/* 3. Match Level / Round */}
+            {form.tournament_id && (
+              <FieldSection label="Match Level / Round" required adding={adding.matchLevel} onToggleAdd={() => setAdding({ ...adding, matchLevel: !adding.matchLevel })}>
+                {adding.matchLevel && (
+                  <InlineAdd value={newVal.matchLevel || ''} onChange={v => setNewVal({ ...newVal, matchLevel: v })} onAdd={addMatchLevel} onCancel={() => setAdding({ ...adding, matchLevel: false })} placeholder="e.g. League, Quarter Final, Semi Final" />
+                )}
+                <PillSelect items={matchLevels} labelKey="name" value={form.match_level_id} onChange={v => setForm({ ...form, match_level_id: v })} color="#22c55e" />
+              </FieldSection>
             )}
 
-            {/* STEP 3 - Details */}
-            {step === 3 && (
-              <div className="space-y-5">
-                {/* Date */}
-                <div>
-                  <label className="text-xs font-medium block mb-2 text-white/70">Match Date <span className="text-red-400">*</span></label>
-                  <DateInput value={form.match_date} onChange={v => setForm({ ...form, match_date: v })} placeholder="Select date" />
-                  {!form.match_date && <p className="text-xs mt-1" style={{ color: '#ef4444' }}>Required</p>}
-                </div>
+            {/* 4. Group */}
+            {form.tournament_id && (
+              <FieldSection label="Group" required adding={adding.group} onToggleAdd={() => setAdding({ ...adding, group: !adding.group })}>
+                {adding.group && (
+                  <InlineAdd value={newVal.group || ''} onChange={v => setNewVal({ ...newVal, group: v })} onAdd={addGroup} onCancel={() => setAdding({ ...adding, group: false })} placeholder="e.g. Group A" />
+                )}
+                <PillSelect items={filteredGroups} labelKey="group_name" value={form.group_id} onChange={v => setForm({ ...form, group_id: v })} color="#7303c0" />
+                {filteredGroups.length === 0 && !adding.group && <p className="text-xs" style={{ color: '#555' }}>No groups for this tournament. Add one.</p>}
+              </FieldSection>
+            )}
 
-                {/* Overs */}
-                <div>
-                  <label className="text-xs font-medium block mb-2 text-white/70">Overs <span className="text-red-400">*</span></label>
-                  {oversList.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {oversList.map(o => (
-                        <button key={o.id} type="button" onClick={() => setForm({ ...form, overs: o.name })}
-                          className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-                          style={{ background: form.overs == o.name ? 'rgba(236,56,188,0.15)' : 'rgba(255,255,255,0.03)', border: `1px solid ${form.overs == o.name ? 'rgba(236,56,188,0.4)' : 'rgba(255,255,255,0.08)'}`, color: form.overs == o.name ? '#ec38bc' : '#888' }}>
-                          {o.name} ov
+            {/* 5. Teams */}
+            {form.group_id && (
+              <div className="space-y-3">
+                <label className="text-xs font-medium text-white/70">Teams <span className="text-red-400">*</span></label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Team A */}
+                  <div>
+                    <p className="text-xs mb-2" style={{ color: '#888' }}>Team 1</p>
+                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto">
+                      {filteredTeams.map(t => (
+                        <button key={t.id} type="button" onClick={() => setForm({ ...form, team_a_id: t.id })}
+                          className="p-2.5 rounded-xl text-center transition-all text-xs truncate"
+                          style={{ background: form.team_a_id == t.id ? 'rgba(115,3,192,0.2)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.team_a_id == t.id ? 'rgba(115,3,192,0.5)' : 'rgba(255,255,255,0.06)'}`, color: form.team_a_id == t.id ? 'white' : '#888' }}>
+                          {t.team_name}
                         </button>
                       ))}
                     </div>
-                  ) : (
-                    <input type="number" value={form.overs} onChange={e => setForm({ ...form, overs: e.target.value })} placeholder="e.g. 20" className="w-full px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                  )}
-                  {!form.overs && <p className="text-xs mt-1" style={{ color: '#ef4444' }}>Required</p>}
-                </div>
-
-                {/* Round / Match Level */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-white/70">Round / Match Level</label>
-                    <button type="button" onClick={() => setAddingRound(!addingRound)} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#ec38bc', background: 'rgba(236,56,188,0.1)' }}>
-                      {addingRound ? '✕ Cancel' : '+ New'}
-                    </button>
                   </div>
-                  {addingRound && (
-                    <div className="mb-3 flex gap-2">
-                      <input value={newRound} onChange={e => setNewRound(e.target.value)} placeholder="e.g. Quarter Final, Semi Final" className="flex-1 px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                      <button type="button" onClick={addRound} className="px-4 py-2.5 text-sm text-white rounded-lg" style={{ background: '#22c55e' }}>Add</button>
+                  {/* Team B */}
+                  <div>
+                    <p className="text-xs mb-2" style={{ color: '#888' }}>Team 2</p>
+                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto">
+                      {filteredTeams.filter(t => t.id != form.team_a_id).map(t => (
+                        <button key={t.id} type="button" onClick={() => setForm({ ...form, team_b_id: t.id })}
+                          className="p-2.5 rounded-xl text-center transition-all text-xs truncate"
+                          style={{ background: form.team_b_id == t.id ? 'rgba(255,96,34,0.2)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.team_b_id == t.id ? 'rgba(255,96,34,0.5)' : 'rgba(255,255,255,0.06)'}`, color: form.team_b_id == t.id ? 'white' : '#888' }}>
+                          {t.team_name}
+                        </button>
+                      ))}
                     </div>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setForm({ ...form, match_level_id: '' })} className="px-3 py-2 rounded-lg text-xs transition-all" style={{ background: !form.match_level_id ? 'rgba(115,3,192,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${!form.match_level_id ? 'rgba(115,3,192,0.3)' : 'rgba(255,255,255,0.06)'}`, color: !form.match_level_id ? 'white' : '#888' }}>None</button>
-                    {matchLevels.map(ml => (
-                      <button key={ml.id} type="button" onClick={() => setForm({ ...form, match_level_id: ml.id })} className="px-3 py-2 rounded-lg text-xs transition-all" style={{ background: form.match_level_id == ml.id ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.match_level_id == ml.id ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.06)'}`, color: form.match_level_id == ml.id ? '#22c55e' : '#888' }}>
-                        {ml.name}
-                      </button>
-                    ))}
                   </div>
-                </div>
-
-                {/* Venue */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-white/70">Venue <span className="text-red-400">*</span></label>
-                    <button type="button" onClick={() => setAddingVenue(!addingVenue)} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#ec38bc', background: 'rgba(236,56,188,0.1)' }}>
-                      {addingVenue ? '✕ Cancel' : '+ New'}
-                    </button>
-                  </div>
-                  {addingVenue && (
-                    <div className="mb-3 p-3 rounded-xl space-y-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(236,56,188,0.2)' }}>
-                      <input value={newVenue.venue_name} onChange={e => setNewVenue({ ...newVenue, venue_name: e.target.value })} placeholder="Venue name" className="w-full px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                      <input value={newVenue.location} onChange={e => setNewVenue({ ...newVenue, location: e.target.value })} placeholder="Location (optional)" className="w-full px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                      <button type="button" onClick={addVenue} className="w-full py-2.5 text-sm font-medium text-white rounded-lg" style={{ background: '#22c55e' }}>Add Venue</button>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-36 overflow-y-auto">
-                    {venues.map(v => (
-                      <button key={v.id} type="button" onClick={() => setForm({ ...form, venue_id: v.id, venue: v.venue_name })}
-                        className="p-3 rounded-xl text-left transition-all text-sm"
-                        style={{ background: form.venue_id == v.id ? 'rgba(255,96,34,0.1)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.venue_id == v.id ? 'rgba(255,96,34,0.3)' : 'rgba(255,255,255,0.06)'}`, color: form.venue_id == v.id ? 'white' : '#888' }}>
-                        <span className="block truncate text-xs">{v.venue_name}</span>
-                        {v.location && <span className="block text-xs mt-0.5 truncate" style={{ color: '#555' }}>{v.location}</span>}
-                      </button>
-                    ))}
-                  </div>
-                  {!form.venue_id && !form.venue && <p className="text-xs mt-1" style={{ color: '#ef4444' }}>Required</p>}
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Wizard Footer */}
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <button onClick={() => step > 1 ? setStep(step - 1) : resetForm()} className="px-4 py-2.5 text-sm font-medium rounded-xl transition-all" style={{ color: '#888', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              {step > 1 ? '← Back' : 'Cancel'}
-            </button>
-            {step < 3 ? (
-              <button onClick={() => setStep(step + 1)} className="px-5 py-2.5 text-sm font-medium text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-40" style={{ background: 'linear-gradient(135deg, #7303c0, #ec38bc)' }}
-                disabled={(step === 1 && !canProceedStep1) || (step === 2 && !canProceedStep2)}>
-                Next →
-              </button>
-            ) : (
-              <button onClick={handleSubmit} className="px-5 py-2.5 text-sm font-medium text-white rounded-xl transition-all hover:opacity-90 active:scale-95 disabled:opacity-40" style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
-                disabled={!canSubmit}>
+            {/* 6. Venue */}
+            {form.team_a_id && form.team_b_id && (
+              <FieldSection label="Venue" required adding={adding.venue} onToggleAdd={() => setAdding({ ...adding, venue: !adding.venue })}>
+                {adding.venue && (
+                  <div className="mb-3 p-3 rounded-xl space-y-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(236,56,188,0.2)' }}>
+                    <input value={newVal.venueName || ''} onChange={e => setNewVal({ ...newVal, venueName: e.target.value })} placeholder="Venue name" className="w-full px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                    <input value={newVal.venueLocation || ''} onChange={e => setNewVal({ ...newVal, venueLocation: e.target.value })} placeholder="Location (optional)" className="w-full px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                    <div className="flex gap-2">
+                      <button type="button" onClick={addVenue} className="flex-1 py-2 text-sm text-white rounded-lg" style={{ background: '#22c55e' }}>Add</button>
+                      <button type="button" onClick={() => setAdding({ ...adding, venue: false })} className="px-3 py-2 text-sm rounded-lg" style={{ color: '#888' }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                  {venues.map(v => (
+                    <button key={v.id} type="button" onClick={() => setForm({ ...form, venue_id: v.id, venue: v.venue_name })}
+                      className="p-2.5 rounded-xl text-left transition-all text-xs"
+                      style={{ background: form.venue_id == v.id ? 'rgba(255,96,34,0.1)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.venue_id == v.id ? 'rgba(255,96,34,0.3)' : 'rgba(255,255,255,0.06)'}`, color: form.venue_id == v.id ? 'white' : '#888' }}>
+                      <span className="block truncate">{v.venue_name}</span>
+                      {v.location && <span className="block text-xs truncate" style={{ color: '#555' }}>{v.location}</span>}
+                    </button>
+                  ))}
+                </div>
+              </FieldSection>
+            )}
+
+            {/* 7. Overs */}
+            {(form.venue_id || form.venue) && (
+              <div>
+                <label className="text-xs font-medium block mb-2 text-white/70">Overs <span className="text-red-400">*</span></label>
+                {oversList.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {oversList.map(o => (
+                      <button key={o.id} type="button" onClick={() => setForm({ ...form, overs: o.name })}
+                        className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                        style={{ background: form.overs == o.name ? 'rgba(236,56,188,0.15)' : 'rgba(255,255,255,0.03)', border: `1px solid ${form.overs == o.name ? 'rgba(236,56,188,0.4)' : 'rgba(255,255,255,0.08)'}`, color: form.overs == o.name ? '#ec38bc' : '#888' }}>
+                        {o.name} ov
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <input type="number" value={form.overs} onChange={e => setForm({ ...form, overs: e.target.value })} placeholder="e.g. 20" className="w-full px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                )}
+              </div>
+            )}
+
+            {/* 8. Date & Time */}
+            {form.overs && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium block mb-2 text-white/70">Date <span className="text-red-400">*</span></label>
+                  <DateInput value={form.match_date} onChange={v => setForm({ ...form, match_date: v })} placeholder="Select date" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-2 text-white/70">Time</label>
+                  <input type="time" value={form.match_time} onChange={e => setForm({ ...form, match_time: e.target.value })} className="w-full px-4 py-3 text-white text-sm focus:outline-none rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                </div>
+              </div>
+            )}
+
+            {/* Create Match Button */}
+            {form.match_date && (
+              <button onClick={handleSubmit} disabled={!canSubmit} className="w-full py-3.5 text-sm font-semibold text-white rounded-xl transition-all active:scale-[0.98] disabled:opacity-40" style={{ background: 'linear-gradient(135deg, #7303c0, #ec38bc)' }}>
                 {editId ? '✓ Update Match' : '🏏 Create Match'}
               </button>
             )}
@@ -397,7 +311,7 @@ export default function ManageMatches() {
                 <div className="min-w-0">
                   <p className="text-white font-medium text-sm truncate">{m.team_a?.team_name} vs {m.team_b?.team_name}</p>
                   <p className="text-xs mt-0.5 truncate" style={{ color: '#555' }}>
-                    {m.tournament?.name} {m.group && `• ${m.group.group_name}`} • {m.overs}ov
+                    {m.tournament?.name} {m.group && `• ${m.group.group_name}`} {m.match_level && `• ${m.match_level.name}`} • {m.overs}ov
                   </p>
                   <p className="text-xs truncate" style={{ color: '#444' }}>{m.match_date || 'TBD'} • {m.venue_info?.venue_name || m.venue || 'TBD'}</p>
                 </div>
@@ -418,6 +332,48 @@ export default function ManageMatches() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Reusable field section with label + inline add button
+function FieldSection({ label, required, adding, onToggleAdd, children }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-medium text-white/70">{label} {required && <span className="text-red-400">*</span>}</label>
+        <button type="button" onClick={onToggleAdd} className="text-xs px-2 py-1 rounded-lg transition-all" style={{ color: '#ec38bc', background: 'rgba(236,56,188,0.1)' }}>
+          {adding ? '✕ Cancel' : '+ New'}
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// Reusable inline add input
+function InlineAdd({ value, onChange, onAdd, onCancel, placeholder }) {
+  return (
+    <div className="mb-3 flex gap-2">
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="flex-1 px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), onAdd())} />
+      <button type="button" onClick={onAdd} className="px-4 py-2.5 text-sm text-white rounded-lg font-medium" style={{ background: '#22c55e' }}>Add</button>
+      <button type="button" onClick={onCancel} className="px-3 py-2.5 text-sm rounded-lg" style={{ color: '#888', background: 'rgba(255,255,255,0.03)' }}>✕</button>
+    </div>
+  );
+}
+
+// Reusable pill/card selector
+function PillSelect({ items, labelKey, value, onChange, color }) {
+  return (
+    <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
+      {items.map(item => (
+        <button key={item.id} type="button" onClick={() => onChange(item.id)}
+          className="px-3 py-2 rounded-xl text-xs font-medium transition-all"
+          style={{ background: value == item.id ? `${color}22` : 'rgba(255,255,255,0.02)', border: `1px solid ${value == item.id ? `${color}66` : 'rgba(255,255,255,0.06)'}`, color: value == item.id ? 'white' : '#888' }}>
+          {item[labelKey]}
+        </button>
+      ))}
     </div>
   );
 }
