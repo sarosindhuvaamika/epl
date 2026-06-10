@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\CricketMatch;
 use App\Models\District;
 use App\Models\Group;
+use App\Models\MatchLevel;
+use App\Models\Over;
 use App\Models\Player;
 use App\Models\Team;
 use App\Models\Tournament;
@@ -23,6 +25,8 @@ class AdminDataController extends Controller
             'matches' => CricketMatch::with('teamA', 'teamB', 'tournament', 'winner', 'group', 'venueInfo')->get(),
             'groups' => Group::with('tournament')->get(),
             'venues' => Venue::all(),
+            'overs' => Over::all(),
+            'matchLevels' => MatchLevel::all(),
         ]);
     }
 }

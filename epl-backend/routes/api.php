@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\AdminDataController;
 use App\Http\Controllers\Api\DistrictController;
 use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\MatchController;
+use App\Http\Controllers\Api\MatchLevelController;
+use App\Http\Controllers\Api\OverController;
 use App\Http\Controllers\Api\PlayerController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\TournamentController;
@@ -35,6 +37,8 @@ Route::get('/groups', [GroupController::class, 'index']);
 Route::get('/groups/{group}', [GroupController::class, 'show']);
 Route::get('/venues', [VenueController::class, 'index']);
 Route::get('/venues/{venue}', [VenueController::class, 'show']);
+Route::get('/overs', [OverController::class, 'index']);
+Route::get('/match-levels', [MatchLevelController::class, 'index']);
 
 // Protected routes (admin)
 Route::middleware('auth:sanctum')->group(function () {
@@ -50,4 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/matches/{match}/score', [MatchController::class, 'updateScore']);
     Route::apiResource('groups', GroupController::class)->except(['index', 'show']);
     Route::apiResource('venues', VenueController::class)->except(['index', 'show']);
+    Route::apiResource('overs', OverController::class)->except(['index']);
+    Route::apiResource('match-levels', MatchLevelController::class)->except(['index']);
 });

@@ -27,6 +27,8 @@ export function AdminDataProvider({ children }) {
       matches: '/matches',
       groups: '/groups',
       venues: '/venues',
+      overs: '/overs',
+      matchLevels: '/match-levels',
     };
     if (endpoints[key]) {
       api.get(endpoints[key]).then(res => {

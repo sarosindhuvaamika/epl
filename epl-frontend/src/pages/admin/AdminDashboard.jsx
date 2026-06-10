@@ -6,21 +6,15 @@ import Loader from '../../components/Loader';
 import ManageTeams from './ManageTeams';
 import ManagePlayers from './ManagePlayers';
 import ManageMatches from './ManageMatches';
-import ManageTournaments from './ManageTournaments';
-import ManageDistricts from './ManageDistricts';
-import ManageGroups from './ManageGroups';
-import ManageVenues from './ManageVenues';
+import ManageSettings from './ManageSettings';
 import Scoring from './Scoring';
 
 const tabs = [
   { key: 'Scoring', label: '🏏 Scoring' },
   { key: 'Matches', label: '📅 Matches' },
-  { key: 'Tournaments', label: '🏆 Tournaments' },
-  { key: 'Groups', label: '📋 Groups' },
   { key: 'Teams', label: '👥 Teams' },
   { key: 'Players', label: '🧑 Players' },
-  { key: 'Venues', label: '🏟️ Venues' },
-  { key: 'Districts', label: '📍 Districts' },
+  { key: 'Settings', label: '⚙️ Configuration' },
 ];
 
 export default function AdminDashboard() {
@@ -58,12 +52,9 @@ function AdminDashboardInner() {
     switch (activeTab) {
       case 'Scoring': return <Scoring />;
       case 'Matches': return <ManageMatches />;
-      case 'Tournaments': return <ManageTournaments />;
-      case 'Groups': return <ManageGroups />;
       case 'Teams': return <ManageTeams />;
       case 'Players': return <ManagePlayers />;
-      case 'Venues': return <ManageVenues />;
-      case 'Districts': return <ManageDistricts />;
+      case 'Settings': return <ManageSettings />;
     }
   };
 
