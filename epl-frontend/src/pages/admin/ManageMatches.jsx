@@ -69,14 +69,16 @@ export default function ManageMatches() {
   };
   const addVenue = async () => {
     if (!newVal.venueName) return;
-    const res = await api.post('/venues', { venue_name: newVal.venueName, location: newVal.venueLocation || '' });
-    refresh('venues'); setForm({ ...form, venue_id: res.data.id, venue: res.data.venue_name }); setNewVal({ ...newVal, venueName: '', venueLocation: '' }); setAdding({ ...adding, venue: false });
+    const res = await api.post('/venues', { venue_name: newVal.venueName, location: newVal.venueLocation || '', tournament_id: form.tournament_id || null });
+    refresh('venues'); refresh('tournaments'); setForm({ ...form, venue_id: res.data.id, venue: res.data.venue_name }); setNewVal({ ...newVal, venueName: '', venueLocation: '' }); setAdding({ ...adding, venue: false });
   };
 
   // Filtered data based on selections
   const filteredTournaments = tournaments.filter(t => !form.district_id || t.district_id == form.district_id);
   const filteredGroups = groups.filter(g => g.tournament_id == form.tournament_id);
-  const filteredTeams = teams;
+  const selectedTournament = tournaments.find(t => t.id == form.tournament_id);
+  const filteredTeams = selectedTournament?.teams?.length ? selectedTournament.teams : teams;
+  const filteredVenues = selectedTournament?.venues?.length ? selectedTournament.venues : venues;
 
   const filtered = matches.filter(m => {
     const matchSearch = (m.team_a?.team_name + ' ' + m.team_b?.team_name).toLowerCase().includes(search.toLowerCase());
@@ -225,7 +227,7 @@ export default function ManageMatches() {
                   </div>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-32 overflow-y-auto">
-                  {venues.map(v => (
+                  {filteredVenues.map(v => (
                     <button key={v.id} type="button" onClick={() => setForm({ ...form, venue_id: v.id, venue: v.venue_name })}
                       className="p-2.5 rounded-xl text-left transition-all text-xs"
                       style={{ background: form.venue_id == v.id ? 'rgba(255,96,34,0.1)' : 'rgba(255,255,255,0.02)', border: `1px solid ${form.venue_id == v.id ? 'rgba(255,96,34,0.3)' : 'rgba(255,255,255,0.06)'}`, color: form.venue_id == v.id ? 'white' : '#888' }}>

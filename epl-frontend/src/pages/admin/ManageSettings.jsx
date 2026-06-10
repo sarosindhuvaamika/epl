@@ -3,18 +3,19 @@ import api from '../../api';
 import { useAdminData } from '../../context/AdminDataContext';
 
 const sections = [
+  { key: 'districts', label: 'Districts', icon: '📍', color: '#3b82f6' },
+  { key: 'tournaments', label: 'Tournaments', icon: '🏆', color: '#f59e0b' },
+  { key: 'assignTeams', label: 'Assign Teams', icon: '👥', color: '#ec38bc' },
   { key: 'groups', label: 'Groups', icon: '📋', color: '#7303c0' },
   { key: 'venues', label: 'Venues', icon: '🏟️', color: '#ff6022' },
-  { key: 'overs', label: 'Overs', icon: '🎯', color: '#ec38bc' },
-  { key: 'matchLevel', label: 'Match Level', icon: '🏅', color: '#22c55e' },
-  { key: 'tournaments', label: 'Tournaments', icon: '🏆', color: '#f59e0b' },
-  { key: 'districts', label: 'Districts', icon: '📍', color: '#3b82f6' },
+  { key: 'overs', label: 'Overs', icon: '🎯', color: '#22c55e' },
+  { key: 'matchLevel', label: 'Match Level', icon: '🏅', color: '#16a34a' },
 ];
 
 const inputStyle = { background: 'rgba(3,0,30,0.6)', border: '1.5px solid rgba(104,102,120,0.4)', borderRadius: '12px', backdropFilter: 'blur(10px)' };
 
 export default function ManageSettings() {
-  const [activeSection, setActiveSection] = useState('groups');
+  const [activeSection, setActiveSection] = useState('districts');
   const active = sections.find(s => s.key === activeSection);
 
   return (
@@ -69,13 +70,93 @@ export default function ManageSettings() {
           </div>
         </div>
 
+        {activeSection === 'districts' && <DistrictsSection />}
+        {activeSection === 'tournaments' && <TournamentsSection />}
+        {activeSection === 'assignTeams' && <AssignTeamsSection />}
         {activeSection === 'groups' && <GroupsSection />}
         {activeSection === 'venues' && <VenuesSection />}
         {activeSection === 'overs' && <OversSection />}
         {activeSection === 'matchLevel' && <MatchLevelSection />}
-        {activeSection === 'tournaments' && <TournamentsSection />}
-        {activeSection === 'districts' && <DistrictsSection />}
       </div>
+    </div>
+  );
+}
+
+function AssignTeamsSection() {
+  const { data, refresh } = useAdminData();
+  const [selectedTournament, setSelectedTournament] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState('');
+
+  const tournaments = data?.tournaments || [];
+  const teams = data?.teams || [];
+  const tournament = tournaments.find(t => t.id == selectedTournament);
+  const tournamentTeams = tournament?.teams || [];
+  const tournamentGroups = tournament?.groups || [];
+  const availableTeams = teams.filter(t => !tournamentTeams.find(tt => tt.id === t.id));
+
+  const addTeam = async () => {
+    if (!selectedTeam || !selectedTournament) return;
+    await api.post(`/tournaments/${selectedTournament}/teams`, { team_id: selectedTeam, group_id: selectedGroup || null });
+    setSelectedTeam(''); refresh('tournaments');
+  };
+
+  const removeTeam = async (teamId) => {
+    await api.delete(`/tournaments/${selectedTournament}/teams/${teamId}`);
+    refresh('tournaments');
+  };
+
+  return (
+    <div className="space-y-4">
+      <FormCard title="Assign Teams to Tournament" editId={null}>
+        <div className="space-y-3">
+          <select value={selectedTournament} onChange={e => { setSelectedTournament(e.target.value); setSelectedGroup(''); }} className="w-full px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors" style={inputStyle}>
+            <option value="">Select Tournament</option>
+            {tournaments.map(t => <option key={t.id} value={t.id}>{t.name} ({t.district?.district_name || 'All'})</option>)}
+          </select>
+          {selectedTournament && (
+            <>
+              <select value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)} className="w-full px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors" style={inputStyle}>
+                <option value="">Assign to Group (optional)</option>
+                {tournamentGroups.map(g => <option key={g.id} value={g.id}>{g.group_name}</option>)}
+              </select>
+              <div className="flex gap-2">
+                <select value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)} className="flex-1 px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors" style={inputStyle}>
+                  <option value="">Select Team to Add</option>
+                  {availableTeams.map(t => <option key={t.id} value={t.id}>{t.team_name}</option>)}
+                </select>
+                <button type="button" onClick={addTeam} className="px-5 py-3 text-white text-sm font-medium rounded-xl transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #ec38bc, #7303c0)' }}>Add</button>
+              </div>
+            </>
+          )}
+        </div>
+      </FormCard>
+
+      {selectedTournament && (
+        <div className="p-4 lg:p-5" style={{ background: 'linear-gradient(135deg, rgba(39,37,63,0.95), rgba(27,25,45,0.95))', border: '1.5px solid rgba(104,102,120,0.3)', borderRadius: '14px' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-sm font-semibold text-white">Teams in {tournament?.name}</h3>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(236,56,188,0.15)', color: '#ec38bc', border: '1px solid rgba(236,56,188,0.3)' }}>{tournamentTeams.length}</span>
+          </div>
+          <div className="space-y-2 max-h-72 overflow-y-auto">
+            {tournamentTeams.length === 0 && <p className="text-center py-6 text-sm" style={{ color: '#686678' }}>No teams assigned yet</p>}
+            {tournamentTeams.map((t, i) => (
+              <div key={t.id} className="flex justify-between items-center px-3 sm:px-4 py-3" style={{ background: 'rgba(3,0,30,0.5)', border: '1.5px solid rgba(104,102,120,0.2)', borderRadius: '12px' }}>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'rgba(236,56,188,0.15)', color: '#ec38bc', border: '1px solid rgba(236,56,188,0.25)' }}>{i + 1}</span>
+                  <div className="min-w-0">
+                    <p className="text-white font-medium text-sm truncate">{t.team_name}</p>
+                    <p className="text-xs truncate" style={{ color: '#686678' }}>{t.pivot?.group_id ? tournamentGroups.find(g => g.id == t.pivot.group_id)?.group_name || '' : 'No group'}</p>
+                  </div>
+                </div>
+                <button onClick={() => removeTeam(t.id)} className="p-2 text-xs font-medium rounded-lg transition-all" style={{ background: 'rgba(255,96,34,0.1)', color: '#ff6022', border: '1px solid rgba(255,96,34,0.2)' }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

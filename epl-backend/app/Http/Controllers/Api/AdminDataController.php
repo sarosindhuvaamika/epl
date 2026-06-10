@@ -21,7 +21,7 @@ class AdminDataController extends Controller
             'districts' => District::all(),
             'teams' => Team::with('district')->get(),
             'players' => Player::with('team')->get(),
-            'tournaments' => Tournament::with('district')->get(),
+            'tournaments' => Tournament::with('district', 'teams', 'venues', 'groups')->get(),
             'matches' => CricketMatch::with('teamA', 'teamB', 'tournament', 'winner', 'group', 'venueInfo', 'matchLevel')->get(),
             'groups' => Group::with('tournament')->get(),
             'venues' => Venue::all(),

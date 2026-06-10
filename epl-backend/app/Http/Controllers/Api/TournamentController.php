@@ -16,7 +16,7 @@ class TournamentController extends Controller
         return Tournament::create($request->only('name', 'district_id', 'start_date', 'end_date', 'status'));
     }
 
-    public function show(Tournament $tournament) { return $tournament->load('district', 'matches.teamA', 'matches.teamB', 'groups'); }
+    public function show(Tournament $tournament) { return $tournament->load('district', 'matches.teamA', 'matches.teamB', 'groups', 'teams', 'venues'); }
 
     public function update(Request $request, Tournament $tournament)
     {
@@ -28,5 +28,23 @@ class TournamentController extends Controller
     {
         $tournament->delete();
         return response()->json(['message' => 'Deleted']);
+    }
+
+    public function teams(Tournament $tournament)
+    {
+        return $tournament->teams()->with('district')->get();
+    }
+
+    public function addTeam(Request $request, Tournament $tournament)
+    {
+        $request->validate(['team_id' => 'required|exists:teams,id']);
+        $tournament->teams()->syncWithoutDetaching([$request->team_id => ['group_id' => $request->group_id]]);
+        return response()->json(['message' => 'Team added']);
+    }
+
+    public function removeTeam(Tournament $tournament, $team)
+    {
+        $tournament->teams()->detach($team);
+        return response()->json(['message' => 'Team removed']);
     }
 }

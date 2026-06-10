@@ -56,4 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('venues', VenueController::class)->except(['index', 'show']);
     Route::apiResource('overs', OverController::class)->except(['index']);
     Route::apiResource('match-levels', MatchLevelController::class)->except(['index']);
+
+    // Tournament team associations
+    Route::post('/tournaments/{tournament}/teams', [TournamentController::class, 'addTeam']);
+    Route::delete('/tournaments/{tournament}/teams/{team}', [TournamentController::class, 'removeTeam']);
+    Route::get('/tournaments/{tournament}/teams', [TournamentController::class, 'teams']);
 });

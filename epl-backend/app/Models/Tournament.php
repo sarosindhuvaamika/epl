@@ -11,4 +11,6 @@ class Tournament extends Model
     public function district() { return $this->belongsTo(District::class); }
     public function matches() { return $this->hasMany(CricketMatch::class, 'tournament_id'); }
     public function groups() { return $this->hasMany(Group::class); }
+    public function teams() { return $this->belongsToMany(Team::class, 'tournament_team')->withPivot('group_id'); }
+    public function venues() { return $this->hasMany(Venue::class); }
 }
