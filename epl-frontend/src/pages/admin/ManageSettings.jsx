@@ -157,6 +157,8 @@ function AssignTeamsSection() {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [error, setError] = useState('');
 
+  const [filterGroup, setFilterGroup] = useState('all');
+
   const tournaments = data?.tournaments || [];
   const teams = data?.teams || [];
   const tournament = tournaments.find(t => t.id == selectedTournament);
@@ -164,6 +166,7 @@ function AssignTeamsSection() {
   const tournamentGroups = tournament?.groups || [];
   const availableTeams = teams.filter(t => !tournamentTeams.find(tt => tt.id === t.id));
   const groupTeamCount = selectedGroup ? tournamentTeams.filter(t => t.pivot?.group_id == selectedGroup).length : 0;
+  const displayedTeams = filterGroup === 'all' ? tournamentTeams : tournamentTeams.filter(t => t.pivot?.group_id == filterGroup);
 
   const addTeam = async () => {
     if (!selectedTeam || !selectedTournament) return;
@@ -210,59 +213,39 @@ function AssignTeamsSection() {
             <h3 className="text-sm font-semibold text-white">Assigned Teams</h3>
             <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(236,56,188,0.15)', color: '#ec38bc' }}>{tournamentTeams.length}</span>
           </div>
-          <div className="space-y-4">
-            {/* Teams grouped by group */}
+          {/* Group filter tabs */}
+          <div className="flex gap-2 overflow-x-auto mb-4 pb-1" style={{ scrollbarWidth: 'none' }}>
+            <button type="button" onClick={() => setFilterGroup('all')} className="shrink-0 px-3 py-2 text-xs font-medium rounded-xl transition-all active:scale-95"
+              style={{ background: filterGroup === 'all' ? 'rgba(236,56,188,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${filterGroup === 'all' ? 'rgba(236,56,188,0.4)' : 'rgba(255,255,255,0.06)'}`, color: filterGroup === 'all' ? 'white' : '#666' }}>
+              All ({tournamentTeams.length})
+            </button>
             {tournamentGroups.map(g => {
-              const groupTeams = tournamentTeams.filter(t => t.pivot?.group_id == g.id);
-              if (groupTeams.length === 0) return null;
+              const count = tournamentTeams.filter(t => t.pivot?.group_id == g.id).length;
               return (
-                <div key={g.id}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(115,3,192,0.1)', color: '#a78bfa', border: '1px solid rgba(115,3,192,0.2)' }}>{g.group_name}</span>
-                    <span className="text-xs" style={{ color: '#555' }}>{groupTeams.length}/5</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {groupTeams.map(t => (
-                      <div key={t.id} className="flex items-center justify-between p-3 rounded-xl transition-all group" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'linear-gradient(135deg, #7303c0, #ec38bc)', color: 'white' }}>{t.team_name?.charAt(0)}</span>
-                          <p className="text-white text-sm font-medium truncate">{t.team_name}</p>
-                        </div>
-                        <button onClick={() => removeTeam(t.id)} className="p-1.5 rounded-lg opacity-50 group-hover:opacity-100 transition-all hover:bg-red-500/10">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="#ff6b6b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <button key={g.id} type="button" onClick={() => setFilterGroup(g.id)} className="shrink-0 px-3 py-2 text-xs font-medium rounded-xl transition-all active:scale-95"
+                  style={{ background: filterGroup === g.id ? 'rgba(115,3,192,0.15)' : 'rgba(255,255,255,0.02)', border: `1px solid ${filterGroup === g.id ? 'rgba(115,3,192,0.4)' : 'rgba(255,255,255,0.06)'}`, color: filterGroup === g.id ? 'white' : '#666' }}>
+                  {g.group_name} ({count}/5)
+                </button>
               );
             })}
-            {/* Teams without a group */}
-            {(() => {
-              const ungrouped = tournamentTeams.filter(t => !t.pivot?.group_id);
-              if (ungrouped.length === 0) return null;
-              return (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.05)', color: '#666', border: '1px solid rgba(255,255,255,0.08)' }}>No Group</span>
-                    <span className="text-xs" style={{ color: '#555' }}>{ungrouped.length}</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {ungrouped.map(t => (
-                      <div key={t.id} className="flex items-center justify-between p-3 rounded-xl transition-all group" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'linear-gradient(135deg, #7303c0, #ec38bc)', color: 'white' }}>{t.team_name?.charAt(0)}</span>
-                          <p className="text-white text-sm font-medium truncate">{t.team_name}</p>
-                        </div>
-                        <button onClick={() => removeTeam(t.id)} className="p-1.5 rounded-lg opacity-50 group-hover:opacity-100 transition-all hover:bg-red-500/10">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="#ff6b6b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      </div>
-                    ))}
+          </div>
+          {/* Filtered team list */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {displayedTeams.length === 0 && <p className="text-center py-6 col-span-2 text-xs" style={{ color: '#555' }}>No teams in this group</p>}
+            {displayedTeams.map(t => (
+              <div key={t.id} className="flex items-center justify-between p-3 rounded-xl transition-all group" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0" style={{ background: 'linear-gradient(135deg, #7303c0, #ec38bc)', color: 'white' }}>{t.team_name?.charAt(0)}</span>
+                  <div className="min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{t.team_name}</p>
+                    <p className="text-xs truncate" style={{ color: '#555' }}>{tournamentGroups.find(g => g.id == t.pivot?.group_id)?.group_name || ''}</p>
                   </div>
                 </div>
-              );
-            })()}
+                <button onClick={() => removeTeam(t.id)} className="p-1.5 rounded-lg opacity-50 group-hover:opacity-100 transition-all hover:bg-red-500/10">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="#ff6b6b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
