@@ -3,7 +3,7 @@ import api from '../../api';
 import { useAdminData } from '../../context/AdminDataContext';
 
 export default function ManageTeams() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [form, setForm] = useState({ team_name: '', district_id: '' });
   const [editId, setEditId] = useState(null);
   const [search, setSearch] = useState('');
@@ -16,13 +16,15 @@ export default function ManageTeams() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editId) await api.put(`/teams/${editId}`, form);
-    else await api.post('/teams', form);
-    resetForm(); refresh('teams');
+    await withLoading(async () => {
+      if (editId) await api.put(`/teams/${editId}`, form);
+      else await api.post('/teams', form);
+      resetForm(); refresh('teams');
+    });
   };
 
   const handleEdit = (t) => { setForm({ team_name: t.team_name, district_id: t.district_id || '' }); setEditId(t.id); setShowForm(true); };
-  const handleDelete = async (id) => { await api.delete(`/teams/${id}`); refresh('teams'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/teams/${id}`); refresh('teams'); }); };
 
   const filtered = teams.filter(t => t.team_name.toLowerCase().includes(search.toLowerCase()));
 

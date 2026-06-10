@@ -4,7 +4,7 @@ import { useAdminData } from '../../context/AdminDataContext';
 import DateInput from '../../components/DateInput';
 
 export default function ManageMatches() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ district_id: '', tournament_id: '', match_level_id: '', group_id: '', team_a_id: '', team_b_id: '', venue_id: '', venue: '', match_date: '', match_time: '', overs: '', status: 'upcoming' });
   const [editId, setEditId] = useState(null);
@@ -29,13 +29,15 @@ export default function ManageMatches() {
   };
 
   const handleSubmit = async () => {
-    const payload = { ...form };
-    if (payload.match_time && payload.match_date) {
-      payload.match_date = `${payload.match_date} ${payload.match_time}`;
-    }
-    if (editId) await api.put(`/matches/${editId}`, payload);
-    else await api.post('/matches', payload);
-    resetForm(); refresh('matches');
+    await withLoading(async () => {
+      const payload = { ...form };
+      if (payload.match_time && payload.match_date) {
+        payload.match_date = `${payload.match_date} ${payload.match_time}`;
+      }
+      if (editId) await api.put(`/matches/${editId}`, payload);
+      else await api.post('/matches', payload);
+      resetForm(); refresh('matches');
+    });
   };
 
   const handleEdit = (m) => {
@@ -44,33 +46,43 @@ export default function ManageMatches() {
     setEditId(m.id); setShowForm(true);
   };
 
-  const handleDelete = async (id) => { await api.delete(`/matches/${id}`); refresh('matches'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/matches/${id}`); refresh('matches'); }); };
 
   // Inline add handlers
   const addDistrict = async () => {
     if (!newVal.district) return;
-    const res = await api.post('/districts', { district_name: newVal.district });
-    refresh('districts'); setForm({ ...form, district_id: res.data.id }); setNewVal({ ...newVal, district: '' }); setAdding({ ...adding, district: false });
+    await withLoading(async () => {
+      const res = await api.post('/districts', { district_name: newVal.district });
+      refresh('districts'); setForm({ ...form, district_id: res.data.id }); setNewVal({ ...newVal, district: '' }); setAdding({ ...adding, district: false });
+    });
   };
   const addTournament = async () => {
     if (!newVal.tournament) return;
-    const res = await api.post('/tournaments', { name: newVal.tournament, district_id: form.district_id, status: 'upcoming' });
-    refresh('tournaments'); setForm({ ...form, tournament_id: res.data.id }); setNewVal({ ...newVal, tournament: '' }); setAdding({ ...adding, tournament: false });
+    await withLoading(async () => {
+      const res = await api.post('/tournaments', { name: newVal.tournament, district_id: form.district_id, status: 'upcoming' });
+      refresh('tournaments'); setForm({ ...form, tournament_id: res.data.id }); setNewVal({ ...newVal, tournament: '' }); setAdding({ ...adding, tournament: false });
+    });
   };
   const addMatchLevel = async () => {
     if (!newVal.matchLevel) return;
-    const res = await api.post('/match-levels', { name: newVal.matchLevel });
-    refresh('matchLevels'); setForm({ ...form, match_level_id: res.data.id }); setNewVal({ ...newVal, matchLevel: '' }); setAdding({ ...adding, matchLevel: false });
+    await withLoading(async () => {
+      const res = await api.post('/match-levels', { name: newVal.matchLevel });
+      refresh('matchLevels'); setForm({ ...form, match_level_id: res.data.id }); setNewVal({ ...newVal, matchLevel: '' }); setAdding({ ...adding, matchLevel: false });
+    });
   };
   const addGroup = async () => {
     if (!newVal.group || !form.tournament_id) return;
-    const res = await api.post('/groups', { group_name: newVal.group, tournament_id: form.tournament_id });
-    refresh('groups'); setForm({ ...form, group_id: res.data.id }); setNewVal({ ...newVal, group: '' }); setAdding({ ...adding, group: false });
+    await withLoading(async () => {
+      const res = await api.post('/groups', { group_name: newVal.group, tournament_id: form.tournament_id });
+      refresh('groups'); setForm({ ...form, group_id: res.data.id }); setNewVal({ ...newVal, group: '' }); setAdding({ ...adding, group: false });
+    });
   };
   const addVenue = async () => {
     if (!newVal.venueName) return;
-    const res = await api.post('/venues', { venue_name: newVal.venueName, location: newVal.venueLocation || '', tournament_id: form.tournament_id || null });
-    refresh('venues'); refresh('tournaments'); setForm({ ...form, venue_id: res.data.id, venue: res.data.venue_name }); setNewVal({ ...newVal, venueName: '', venueLocation: '' }); setAdding({ ...adding, venue: false });
+    await withLoading(async () => {
+      const res = await api.post('/venues', { venue_name: newVal.venueName, location: newVal.venueLocation || '', tournament_id: form.tournament_id || null });
+      refresh('venues'); refresh('tournaments'); setForm({ ...form, venue_id: res.data.id, venue: res.data.venue_name }); setNewVal({ ...newVal, venueName: '', venueLocation: '' }); setAdding({ ...adding, venue: false });
+    });
   };
 
   // Filtered data based on selections

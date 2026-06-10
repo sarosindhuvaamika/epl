@@ -6,6 +6,7 @@ const AdminDataContext = createContext();
 export function AdminDataProvider({ children }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const loadAll = useCallback(async (showLoader = true) => {
     if (showLoader) setLoading(true);
@@ -17,15 +18,23 @@ export function AdminDataProvider({ children }) {
     }
   }, []);
 
-  const refresh = useCallback((key) => {
-    // Refresh all data to keep relationships in sync
+  const refresh = useCallback(() => {
     api.get('/admin/data').then(res => {
       setData(res.data);
     });
   }, []);
 
+  const withLoading = useCallback(async (fn) => {
+    setActionLoading(true);
+    try {
+      return await fn();
+    } finally {
+      setActionLoading(false);
+    }
+  }, []);
+
   return (
-    <AdminDataContext.Provider value={{ data, loading, loadAll, refresh }}>
+    <AdminDataContext.Provider value={{ data, loading, actionLoading, loadAll, refresh, withLoading }}>
       {children}
     </AdminDataContext.Provider>
   );

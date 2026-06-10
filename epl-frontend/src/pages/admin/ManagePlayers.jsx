@@ -3,7 +3,7 @@ import api from '../../api';
 import { useAdminData } from '../../context/AdminDataContext';
 
 export default function ManagePlayers() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [form, setForm] = useState({ name: '', emp_id: '', email_id: '', phone_no: '', team_id: '' });
   const [editId, setEditId] = useState(null);
   const [search, setSearch] = useState('');
@@ -17,13 +17,15 @@ export default function ManagePlayers() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editId) await api.put(`/players/${editId}`, form);
-    else await api.post('/players', form);
-    resetForm(); refresh('players');
+    await withLoading(async () => {
+      if (editId) await api.put(`/players/${editId}`, form);
+      else await api.post('/players', form);
+      resetForm(); refresh('players');
+    });
   };
 
   const handleEdit = (p) => { setForm({ name: p.name, emp_id: p.emp_id || '', email_id: p.email_id || '', phone_no: p.phone_no, team_id: p.team_id || '' }); setEditId(p.id); setShowForm(true); };
-  const handleDelete = async (id) => { await api.delete(`/players/${id}`); refresh('players'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/players/${id}`); refresh('players'); }); };
 
   const filtered = players.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.emp_id && p.emp_id.toLowerCase().includes(search.toLowerCase()));

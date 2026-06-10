@@ -43,7 +43,7 @@ export default function AdminDashboard() {
 
 function AdminDashboardInner() {
   const { user, logout } = useAuth();
-  const { data, loading, loadAll } = useAdminData();
+  const { data, loading, actionLoading, loadAll } = useAdminData();
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -135,6 +135,9 @@ function AdminDashboardInner() {
           {loading ? <Loader dark /> : renderTab()}
         </main>
       </div>
+
+      {/* Action Loading Overlay */}
+      {actionLoading && <Loader mini />}
 
       {/* Mobile Bottom Nav */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around py-2 px-2" style={{ background: '#111128', borderTop: '1px solid rgba(255,255,255,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}>

@@ -71,7 +71,7 @@ export default function ManageSettings() {
 
 // ─── DISTRICTS ───
 function DistrictsSection() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [name, setName] = useState('');
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
@@ -80,12 +80,14 @@ function DistrictsSection() {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     try {
-      if (editId) await api.put(`/districts/${editId}`, { district_name: name });
-      else await api.post('/districts', { district_name: name });
-      setName(''); setEditId(null); refresh('districts');
+      await withLoading(async () => {
+        if (editId) await api.put(`/districts/${editId}`, { district_name: name });
+        else await api.post('/districts', { district_name: name });
+        setName(''); setEditId(null); refresh('districts');
+      });
     } catch (err) { setError(err.response?.data?.message || 'Already exists'); }
   };
-  const handleDelete = async (id) => { await api.delete(`/districts/${id}`); refresh('districts'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/districts/${id}`); refresh('districts'); }); };
 
   return (
     <div className="space-y-4">
@@ -103,7 +105,7 @@ function DistrictsSection() {
 
 // ─── TOURNAMENTS ───
 function TournamentsSection() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [form, setForm] = useState({ name: '', district_id: '', status: 'upcoming' });
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
@@ -113,12 +115,14 @@ function TournamentsSection() {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     try {
-      if (editId) await api.put(`/tournaments/${editId}`, form);
-      else await api.post('/tournaments', form);
-      setForm({ name: '', district_id: '', status: 'upcoming' }); setEditId(null); refresh('tournaments');
+      await withLoading(async () => {
+        if (editId) await api.put(`/tournaments/${editId}`, form);
+        else await api.post('/tournaments', form);
+        setForm({ name: '', district_id: '', status: 'upcoming' }); setEditId(null); refresh('tournaments');
+      });
     } catch (err) { setError(err.response?.data?.message || 'Already exists'); }
   };
-  const handleDelete = async (id) => { await api.delete(`/tournaments/${id}`); refresh('tournaments'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/tournaments/${id}`); refresh('tournaments'); }); };
 
   return (
     <div className="space-y-4">
@@ -151,7 +155,7 @@ function TournamentsSection() {
 
 // ─── ASSIGN TEAMS ───
 function AssignTeamsSection() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [selectedTournament, setSelectedTournament] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
@@ -172,11 +176,13 @@ function AssignTeamsSection() {
     if (!selectedTeam || !selectedTournament) return;
     setError('');
     try {
-      await api.post(`/tournaments/${selectedTournament}/teams`, { team_id: selectedTeam, group_id: selectedGroup || null });
-      setSelectedTeam(''); refresh('tournaments');
+      await withLoading(async () => {
+        await api.post(`/tournaments/${selectedTournament}/teams`, { team_id: selectedTeam, group_id: selectedGroup || null });
+        setSelectedTeam(''); refresh('tournaments');
+      });
     } catch (err) { setError(err.response?.data?.message || 'Error'); }
   };
-  const removeTeam = async (teamId) => { await api.delete(`/tournaments/${selectedTournament}/teams/${teamId}`); refresh('tournaments'); };
+  const removeTeam = async (teamId) => { await withLoading(async () => { await api.delete(`/tournaments/${selectedTournament}/teams/${teamId}`); refresh('tournaments'); }); };
 
   return (
     <div className="space-y-4">
@@ -255,7 +261,7 @@ function AssignTeamsSection() {
 
 // ─── GROUPS ───
 function GroupsSection() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [form, setForm] = useState({ group_name: '', tournament_id: '' });
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
@@ -265,12 +271,14 @@ function GroupsSection() {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     try {
-      if (editId) await api.put(`/groups/${editId}`, form);
-      else await api.post('/groups', form);
-      setForm({ group_name: '', tournament_id: '' }); setEditId(null); refresh('groups');
+      await withLoading(async () => {
+        if (editId) await api.put(`/groups/${editId}`, form);
+        else await api.post('/groups', form);
+        setForm({ group_name: '', tournament_id: '' }); setEditId(null); refresh('groups');
+      });
     } catch (err) { setError(err.response?.data?.message || 'Already exists in this tournament'); }
   };
-  const handleDelete = async (id) => { await api.delete(`/groups/${id}`); refresh('groups'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/groups/${id}`); refresh('groups'); }); };
 
   return (
     <div className="space-y-4">
@@ -292,7 +300,7 @@ function GroupsSection() {
 
 // ─── VENUES ───
 function VenuesSection() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [form, setForm] = useState({ venue_name: '', location: '' });
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
@@ -301,12 +309,14 @@ function VenuesSection() {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     try {
-      if (editId) await api.put(`/venues/${editId}`, form);
-      else await api.post('/venues', form);
-      setForm({ venue_name: '', location: '' }); setEditId(null); refresh('venues');
+      await withLoading(async () => {
+        if (editId) await api.put(`/venues/${editId}`, form);
+        else await api.post('/venues', form);
+        setForm({ venue_name: '', location: '' }); setEditId(null); refresh('venues');
+      });
     } catch (err) { setError(err.response?.data?.message || 'Already exists'); }
   };
-  const handleDelete = async (id) => { await api.delete(`/venues/${id}`); refresh('venues'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/venues/${id}`); refresh('venues'); }); };
 
   return (
     <div className="space-y-4">
@@ -325,7 +335,7 @@ function VenuesSection() {
 
 // ─── OVERS ───
 function OversSection() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [name, setName] = useState('');
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
@@ -334,12 +344,14 @@ function OversSection() {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     try {
-      if (editId) await api.put(`/overs/${editId}`, { name });
-      else await api.post('/overs', { name });
-      setName(''); setEditId(null); refresh('overs');
+      await withLoading(async () => {
+        if (editId) await api.put(`/overs/${editId}`, { name });
+        else await api.post('/overs', { name });
+        setName(''); setEditId(null); refresh('overs');
+      });
     } catch (err) { setError(err.response?.data?.message || 'Already exists'); }
   };
-  const handleDelete = async (id) => { await api.delete(`/overs/${id}`); refresh('overs'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/overs/${id}`); refresh('overs'); }); };
 
   return (
     <div className="space-y-4">
@@ -357,7 +369,7 @@ function OversSection() {
 
 // ─── MATCH LEVEL ───
 function MatchLevelSection() {
-  const { data, refresh } = useAdminData();
+  const { data, refresh, withLoading } = useAdminData();
   const [name, setName] = useState('');
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
@@ -366,12 +378,14 @@ function MatchLevelSection() {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     try {
-      if (editId) await api.put(`/match-levels/${editId}`, { name });
-      else await api.post('/match-levels', { name });
-      setName(''); setEditId(null); refresh('matchLevels');
+      await withLoading(async () => {
+        if (editId) await api.put(`/match-levels/${editId}`, { name });
+        else await api.post('/match-levels', { name });
+        setName(''); setEditId(null); refresh('matchLevels');
+      });
     } catch (err) { setError(err.response?.data?.message || 'Already exists'); }
   };
-  const handleDelete = async (id) => { await api.delete(`/match-levels/${id}`); refresh('matchLevels'); };
+  const handleDelete = async (id) => { await withLoading(async () => { await api.delete(`/match-levels/${id}`); refresh('matchLevels'); }); };
 
   return (
     <div className="space-y-4">
