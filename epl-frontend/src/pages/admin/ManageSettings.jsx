@@ -181,7 +181,7 @@ function AssignTeamsSection() {
         <div className="space-y-4">
           <div>
             <label className="text-xs font-medium block mb-2" style={{ color: '#888' }}>Select Tournament</label>
-            <PillPicker items={tournaments} labelKey="name" value={selectedTournament} onChange={v => { setSelectedTournament(v); setSelectedGroup(''); }} color="#f59e0b" />
+            <PillPicker items={tournaments} labelKey="name" subKey={t => t.district?.district_name} value={selectedTournament} onChange={v => { setSelectedTournament(v); setSelectedGroup(''); }} color="#f59e0b" />
           </div>
           {selectedTournament && (
             <>
@@ -392,7 +392,7 @@ function GlowInput({ value, onChange, placeholder, icon }) {
   );
 }
 
-function PillPicker({ items, labelKey, value, onChange, color, allowNone, noneLabel }) {
+function PillPicker({ items, labelKey, subKey, value, onChange, color, allowNone, noneLabel }) {
   return (
     <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
       {allowNone && (
@@ -405,7 +405,8 @@ function PillPicker({ items, labelKey, value, onChange, color, allowNone, noneLa
         <button key={item.id} type="button" onClick={() => onChange(item.id)}
           className="px-3.5 py-2 rounded-xl text-xs font-medium transition-all active:scale-95"
           style={{ background: value == item.id ? `${color}20` : 'rgba(255,255,255,0.02)', border: `1px solid ${value == item.id ? `${color}55` : 'rgba(255,255,255,0.06)'}`, color: value == item.id ? 'white' : '#777', boxShadow: value == item.id ? `0 0 12px ${color}15` : 'none' }}>
-          {item[labelKey]}
+          <span>{item[labelKey]}</span>
+          {subKey && <span className="block text-[10px] mt-0.5" style={{ color: value == item.id ? `${color}` : '#555' }}>{typeof subKey === 'function' ? subKey(item) : item[subKey]}</span>}
         </button>
       ))}
     </div>

@@ -18,23 +18,10 @@ export function AdminDataProvider({ children }) {
   }, []);
 
   const refresh = useCallback((key) => {
-    // Refresh a specific resource without full loader
-    const endpoints = {
-      districts: '/districts',
-      teams: '/teams',
-      players: '/players',
-      tournaments: '/tournaments',
-      matches: '/matches',
-      groups: '/groups',
-      venues: '/venues',
-      overs: '/overs',
-      matchLevels: '/match-levels',
-    };
-    if (endpoints[key]) {
-      api.get(endpoints[key]).then(res => {
-        setData(prev => prev ? { ...prev, [key]: res.data } : prev);
-      });
-    }
+    // Refresh all data to keep relationships in sync
+    api.get('/admin/data').then(res => {
+      setData(res.data);
+    });
   }, []);
 
   return (
