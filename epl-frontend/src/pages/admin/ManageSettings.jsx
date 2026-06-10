@@ -17,23 +17,30 @@ export default function ManageSettings() {
   const [activeSection, setActiveSection] = useState('groups');
 
   return (
-    <div className="space-y-4">
-      {/* Section Tabs */}
-      <div className="flex flex-wrap gap-2">
+    <div className="flex gap-4 h-[calc(100vh-180px)]">
+      {/* Left Pane - Navigation */}
+      <div className="w-48 shrink-0 py-3 overflow-y-auto" style={{ background: '#27253f', border: '1.5px solid #686678', borderRadius: '10px' }}>
         {sections.map(s => (
-          <button key={s.key} onClick={() => setActiveSection(s.key)} className="px-3 py-2 text-xs font-medium rounded-lg transition-all"
-            style={{ background: activeSection === s.key ? 'linear-gradient(135deg, #7303c0, #ec38bc)' : '#27253f', color: 'white', border: activeSection === s.key ? 'none' : '1.5px solid #686678' }}>
+          <button key={s.key} onClick={() => setActiveSection(s.key)} className="w-full text-left px-4 py-3 text-sm font-medium transition-all"
+            style={{
+              color: activeSection === s.key ? 'white' : '#b4b2be',
+              background: activeSection === s.key ? 'linear-gradient(90deg, rgba(115,3,192,0.3), transparent)' : 'transparent',
+              borderRight: activeSection === s.key ? '3px solid #ec38bc' : '3px solid transparent',
+            }}>
             {s.label}
           </button>
         ))}
       </div>
 
-      {activeSection === 'groups' && <GroupsSection />}
-      {activeSection === 'venues' && <VenuesSection />}
-      {activeSection === 'overs' && <OversSection />}
-      {activeSection === 'matchLevel' && <MatchLevelSection />}
-      {activeSection === 'tournaments' && <TournamentsSection />}
-      {activeSection === 'districts' && <DistrictsSection />}
+      {/* Right Pane - Content */}
+      <div className="flex-1 overflow-y-auto">
+        {activeSection === 'groups' && <GroupsSection />}
+        {activeSection === 'venues' && <VenuesSection />}
+        {activeSection === 'overs' && <OversSection />}
+        {activeSection === 'matchLevel' && <MatchLevelSection />}
+        {activeSection === 'tournaments' && <TournamentsSection />}
+        {activeSection === 'districts' && <DistrictsSection />}
+      </div>
     </div>
   );
 }
