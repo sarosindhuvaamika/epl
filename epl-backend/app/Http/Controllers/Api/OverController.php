@@ -12,7 +12,7 @@ class OverController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required|string']);
+        $request->validate(['name' => 'required|string|unique:overs,name']);
         return Over::create($request->only('name'));
     }
 

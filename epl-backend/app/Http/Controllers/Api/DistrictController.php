@@ -12,7 +12,7 @@ class DistrictController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['district_name' => 'required']);
+        $request->validate(['district_name' => 'required|unique:districts,district_name']);
         return District::create($request->only('district_name'));
     }
 

@@ -16,6 +16,8 @@ class GroupController extends Controller
             'group_name' => 'required',
             'tournament_id' => 'required|exists:tournaments,id',
         ]);
+        $exists = Group::where('group_name', $request->group_name)->where('tournament_id', $request->tournament_id)->exists();
+        if ($exists) return response()->json(['message' => 'Group already exists in this tournament'], 422);
         return Group::create($request->only('group_name', 'tournament_id'));
     }
 

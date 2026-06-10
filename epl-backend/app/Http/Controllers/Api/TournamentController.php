@@ -12,7 +12,7 @@ class TournamentController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required']);
+        $request->validate(['name' => 'required|unique:tournaments,name']);
         return Tournament::create($request->only('name', 'district_id', 'start_date', 'end_date', 'status'));
     }
 

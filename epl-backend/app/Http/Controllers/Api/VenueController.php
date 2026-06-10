@@ -12,8 +12,8 @@ class VenueController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['venue_name' => 'required']);
-        return Venue::create($request->only('venue_name', 'location'));
+        $request->validate(['venue_name' => 'required|unique:venues,venue_name']);
+        return Venue::create($request->only('venue_name', 'location', 'tournament_id'));
     }
 
     public function show(Venue $venue) { return $venue; }

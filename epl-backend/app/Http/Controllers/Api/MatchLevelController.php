@@ -12,7 +12,7 @@ class MatchLevelController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required|string']);
+        $request->validate(['name' => 'required|string|unique:match_levels,name']);
         return MatchLevel::create($request->only('name'));
     }
 
