@@ -126,8 +126,8 @@ function TournamentsSection() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <GlowInput value={form.name} onChange={v => setForm({ ...form, name: v })} placeholder="Tournament name" icon="🏆" />
           <div>
-            <label className="text-xs font-medium block mb-2" style={{ color: '#888' }}>District</label>
-            <PillPicker items={districts} labelKey="district_name" value={form.district_id} onChange={v => setForm({ ...form, district_id: v })} color="#3b82f6" allowNone noneLabel="All Districts" />
+            <label className="text-xs font-medium block mb-2" style={{ color: '#888' }}>District <span className="text-red-400">*</span></label>
+            <PillPicker items={districts} labelKey="district_name" value={form.district_id} onChange={v => setForm({ ...form, district_id: v })} color="#3b82f6" />
           </div>
           <div>
             <label className="text-xs font-medium block mb-2" style={{ color: '#888' }}>Status</label>
@@ -189,8 +189,8 @@ function AssignTeamsSection() {
           {selectedTournament && (
             <>
               <div>
-                <label className="text-xs font-medium block mb-2" style={{ color: '#888' }}>Assign to Group</label>
-                <PillPicker items={tournamentGroups} labelKey="group_name" value={selectedGroup} onChange={setSelectedGroup} color="#7303c0" allowNone noneLabel="No Group" />
+                <label className="text-xs font-medium block mb-2" style={{ color: '#888' }}>Assign to Group <span className="text-red-400">*</span></label>
+                <PillPicker items={tournamentGroups} labelKey="group_name" value={selectedGroup} onChange={setSelectedGroup} color="#7303c0" />
                 {selectedGroup && <p className="text-xs mt-2" style={{ color: groupTeamCount >= 5 ? '#ef4444' : '#555' }}>⚡ {groupTeamCount}/5 teams in this group</p>}
               </div>
               <div>
@@ -199,7 +199,7 @@ function AssignTeamsSection() {
                 {availableTeams.length === 0 && <p className="text-xs mt-1" style={{ color: '#555' }}>All teams assigned ✓</p>}
               </div>
               {error && <ErrorBadge message={error} />}
-              <button type="button" onClick={addTeam} disabled={!selectedTeam || (selectedGroup && groupTeamCount >= 5)} className="w-full py-3 text-sm font-semibold text-white rounded-xl transition-all active:scale-[0.98] disabled:opacity-30" style={{ background: 'linear-gradient(135deg, #ec38bc, #7303c0)' }}>
+              <button type="button" onClick={addTeam} disabled={!selectedTeam || !selectedGroup || (selectedGroup && groupTeamCount >= 5)} className="w-full py-3 text-sm font-semibold text-white rounded-xl transition-all active:scale-[0.98] disabled:opacity-30" style={{ background: 'linear-gradient(135deg, #ec38bc, #7303c0)' }}>
                 + Assign Team
               </button>
             </>
