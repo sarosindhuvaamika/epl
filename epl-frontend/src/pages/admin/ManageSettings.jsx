@@ -87,6 +87,7 @@ function AssignTeamsSection() {
   const [selectedTournament, setSelectedTournament] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
+  const [error, setError] = useState('');
 
   const tournaments = data?.tournaments || [];
   const teams = data?.teams || [];
@@ -94,11 +95,17 @@ function AssignTeamsSection() {
   const tournamentTeams = tournament?.teams || [];
   const tournamentGroups = tournament?.groups || [];
   const availableTeams = teams.filter(t => !tournamentTeams.find(tt => tt.id === t.id));
+  const groupTeamCount = selectedGroup ? tournamentTeams.filter(t => t.pivot?.group_id == selectedGroup).length : 0;
 
   const addTeam = async () => {
     if (!selectedTeam || !selectedTournament) return;
-    await api.post(`/tournaments/${selectedTournament}/teams`, { team_id: selectedTeam, group_id: selectedGroup || null });
-    setSelectedTeam(''); refresh('tournaments');
+    setError('');
+    try {
+      await api.post(`/tournaments/${selectedTournament}/teams`, { team_id: selectedTeam, group_id: selectedGroup || null });
+      setSelectedTeam(''); refresh('tournaments');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error adding team');
+    }
   };
 
   const removeTeam = async (teamId) => {
@@ -125,8 +132,10 @@ function AssignTeamsSection() {
                   <option value="">Select Team to Add</option>
                   {availableTeams.map(t => <option key={t.id} value={t.id}>{t.team_name}</option>)}
                 </select>
-                <button type="button" onClick={addTeam} className="px-5 py-3 text-white text-sm font-medium rounded-xl transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #ec38bc, #7303c0)' }}>Add</button>
+                <button type="button" onClick={addTeam} disabled={selectedGroup && groupTeamCount >= 5} className="px-5 py-3 text-white text-sm font-medium rounded-xl transition-all active:scale-95 disabled:opacity-40" style={{ background: 'linear-gradient(135deg, #ec38bc, #7303c0)' }}>Add</button>
               </div>
+              {selectedGroup && <p className="text-xs" style={{ color: groupTeamCount >= 5 ? '#ef4444' : '#686678' }}>{groupTeamCount}/5 teams in this group</p>}
+              {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>{error}</p>}
             </>
           )}
         </div>

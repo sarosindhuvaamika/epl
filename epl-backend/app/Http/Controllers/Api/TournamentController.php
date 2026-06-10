@@ -38,7 +38,21 @@ class TournamentController extends Controller
     public function addTeam(Request $request, Tournament $tournament)
     {
         $request->validate(['team_id' => 'required|exists:teams,id']);
-        $tournament->teams()->syncWithoutDetaching([$request->team_id => ['group_id' => $request->group_id]]);
+
+        // Check duplicate
+        if ($tournament->teams()->where('team_id', $request->team_id)->exists()) {
+            return response()->json(['message' => 'Team already assigned to this tournament'], 422);
+        }
+
+        // Check max 5 teams per group
+        if ($request->group_id) {
+            $groupTeamCount = $tournament->teams()->wherePivot('group_id', $request->group_id)->count();
+            if ($groupTeamCount >= 5) {
+                return response()->json(['message' => 'Maximum 5 teams allowed per group'], 422);
+            }
+        }
+
+        $tournament->teams()->attach($request->team_id, ['group_id' => $request->group_id]);
         return response()->json(['message' => 'Team added']);
     }
 
